@@ -1,0 +1,32 @@
+{
+  "defaultBaseBranch": "main",
+  "protectedBranches": [
+    "main",
+    "master",
+    "develop",
+    "release/*"
+  ],
+  "commands": {
+    "install": "npm install",
+    "lint": "npm run lint --if-present",
+    "typecheck": "npm run typecheck --if-present",
+    "unit": "npm test --if-present -- --run",
+    "build": "npm run build --if-present",
+    "e2e": "npx playwright test",
+    "dev": "npm run dev"
+  },
+  "devServer": {
+    "url": "http://127.0.0.1:5173",
+    "reuseExisting": true
+  },
+  "commitPrefixes": [
+    "feat",
+    "fix",
+    "test",
+    "refactor",
+    "docs",
+    "chore"
+  ],
+  "autoCommit": true,
+  "neverPush": true
+}

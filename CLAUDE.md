@@ -89,3 +89,34 @@ User → React Interface → Internal API Route → IVAREM Provider → IVAREM
 4. `lib/waste-normalization.ts` – Business logic for waste categorization
 5. `lib/dates.ts` – Timezone correctness cornerstone
 6. `app/globals.css` – Theme and layout foundation
+
+# Project Operating Rules
+
+## Priorities
+
+1. Correctness and adherence to existing conventions.
+2. Small, reversible changes.
+3. Evidence through tests, not assumptions.
+4. Concise communication and minimal context usage.
+
+## Required Workflow
+
+* Read `.claude/project.config.json` first.
+* Before implementation, investigate whether similar logic, tests, components, or patterns already exist.
+* Place new code next to the most similar existing code; do not introduce new architecture unless necessary.
+* Before starting any new feature, create a `feature/<slug>` branch from a clean working tree.
+* Work in small subtasks. Test and commit each completed subtask locally.
+* Push, force-push, merge, rebase, tagging, and remote branch creation are prohibited without an explicit user request.
+* Never modify `main`, `master`, `develop`, or a release branch directly.
+* Stop when unexpected existing changes are detected; do not overwrite them.
+
+## Definition of Done
+
+* Acceptance criteria have been demonstrably completed.
+* Relevant unit, integration, type-checking, and linting tests pass.
+* UI behavior has been verified with Playwright whenever user interaction or rendering changes.
+* The diff has been reviewed for regressions, security issues, simplicity, and duplication.
+* No secrets, debug code, or generated artifacts are included in the commit.
+* `docs/session-log.md` and, where necessary, `docs/retrospectives/` have been updated.
+
+Use skills for procedures; keep this file concise.

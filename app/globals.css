@@ -5,6 +5,29 @@
   --cream: #f5f7f2; --white: #fff; --line: #dfe7e2; --danger: #a53b35;
   --shadow: 0 16px 42px rgba(30, 65, 54, .1);
 }
+
+/* Dark theme overrides */
+.dark-theme {
+  --ink: #e0e0e0; /* Light gray for text */
+  --muted: #a0a0a0; /* Muted text */
+  --green: #68b798; /* Lighter green for accents */
+  --green-dark: #4a8a72; /* Darker green for hover states */
+  --cream: #2d2d2d; /* Dark background instead of cream */
+  --white: #ffffff; /* Keep white for contrast where needed */
+  --line: #4a4a4a; /* Darker border/line color */
+  --danger: #ff6b6b; /* Softer red for errors */
+  --shadow: 0 16px 42px rgba(0, 0, 0, .5); /* Darker shadow */
+}
+
+/* Update body background for dark theme */
+.dark-theme body {
+  background: radial-gradient(circle at 0 0, rgba(45,45,45,.7), transparent 32rem), var(--cream);
+}
+
+/* Ensure text color is updated on body */
+.dark-theme body {
+  color: var(--ink);
+}
 * { box-sizing: border-box; }
 html { background: var(--cream); scroll-behavior: smooth; }
 body {
@@ -40,6 +63,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .settings-button:hover, .refresh-button:hover { border-color: var(--green); background: white; }
 .settings-button, .refresh-button { display: inline-flex; align-items: center; gap: 7px; }
 .settings-button .material-symbols-outlined, .refresh-button .material-symbols-outlined { font-size: 1.12rem; }
+.theme-icon {
+  margin-right: 8px;
+  font-size: 24px;
+  line-height: 1;
+  vertical-align: middle;
+}
 .tomorrow-card {
   display: grid; grid-template-columns: .8fr 1.2fr; gap: 36px; min-height: 310px;
   padding: clamp(28px,5vw,58px); border-radius: 34px; color: white;
@@ -130,3 +159,110 @@ input:hover { border-color: #91ac9f; }
   footer { display: block; } footer p, footer a { display: block; margin-bottom: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation-duration: .01ms !important; } }
+
+/* Toggle switch */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+
+.toggle-label input {
+  display: none;
+}
+
+.slider {
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 10px;
+  position: relative;
+  margin-left: 10px;
+  transition: .4s;
+}
+
+.slider:before {
+  content: "";
+  height: 16px;
+  width: 16px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--green);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Dark mode adjustments for toggle */
+.dark-theme .slider {
+  background-color: #666;
+}
+
+.dark-theme input:checked + .slider {
+  background-color: var(--green);
+}
+
+/* Toggle switch for theme */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--green);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* In dark mode, adjust the toggle colors */
+.dark-theme .slider {
+  background-color: #666;
+}
+
+.dark-theme input:checked + .slider {
+  background-color: var(--green);
+}

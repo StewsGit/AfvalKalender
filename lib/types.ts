@@ -7,3 +7,5 @@ export interface CollectionResponse {
 export interface WasteCollectionProvider {
   getCollections(address: Address, startDate: string, endDate: string): Promise<CollectionResponse>;
 }
+
+export type Theme = "light" | "dark";
