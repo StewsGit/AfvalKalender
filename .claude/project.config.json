@@ -7,14 +7,17 @@
     "release/*"
   ],
   "commands": {
-    "install": "npm install",
-    "lint": "npm run lint --if-present",
-    "typecheck": "npm run typecheck --if-present",
-    "unit": "npm test --if-present -- --run",
-    "build": "npm run build --if-present",
+    "install": "npm ci",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "unit": "npm test",
+    "build": "npm run build",
+    "e2ePrepare": "npm run e2e:setup",
     "e2e": "npx playwright test",
+    "e2eSingle": "npx playwright test <spec> --workers=1",
     "dev": "npm run dev"
   },
+  "commandNotes": "No --if-present anywhere: a missing script must fail loudly instead of being silently skipped.",
   "devServer": {
     "url": "http://127.0.0.1:5173",
     "reuseExisting": true

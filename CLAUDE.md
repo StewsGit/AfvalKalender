@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Start development server**: `npm run dev` (opens local Vite URL)
 - **Run unit tests**: `npm test` (runs Node.js test runner on `tests/unit/*.test.ts`)
 - **Run E2E tests**: `npx playwright test` (specs in `tests/e2e/`; starts the dev server automatically)
+- **Install E2E browser**: `npm run e2e:setup` (idempotent; run before the first Playwright run of a session)
 - **Run linting**: `npm run lint` (uses eslint with Next.js config)
+- **Run type checking**: `npm run typecheck` (`tsc --noEmit`; not covered by lint)
 - **Build for production**: `npm run build` (bundles via Vinext/Vite into Cloudflare Worker format)
 - **Validate build artifacts**: `npm run validate:artifact` (runs validation script)
 - **Start production preview**: `npm start` (uses vinext and wrangler)
@@ -75,7 +77,14 @@ User → React Interface → Internal API Route → IVAREM Provider → IVAREM
 - Unit tests in `tests/unit/` using Node.js test runner (`node --import tsx --test`)
 - Focus on pure functions: date logic (`dates.ts`), waste normalization (`waste-normalization.ts`), theme resolution (`theme.ts`)
 - E2E tests in `tests/e2e/` using Playwright (`npx playwright test`); dev server starts automatically
+- Playwright runs with `workers: 1` on purpose — a cold Vite dev server drops parallel requests, which looks like random timeouts. Do not raise it
 - Run with `npm test`; includes linting (`npm run lint`) and build validation in CI
+
+### Known Gotchas
+- `react-hooks/set-state-in-effect` is an **error**, not a warning. Do not sync external state into `useState` inside `useEffect`; use `useSyncExternalStore`. Run `npm run lint` early — this rule can force a rewrite
+- `tsc --noEmit` catches things ESLint does not; run `npm run typecheck` as its own step
+- Cloudflare ambient types (`D1Database`, `Fetcher`, `cloudflare:workers`) come from `@cloudflare/workers-types`; bindings are declared in `db/env.d.ts` because there is no wrangler config
+- Colour changes need a contrast assertion at the token level (`tests/unit/theme-contrast.test.ts`). An e2e test proving a colour *changed* will not catch an unreadable one
 
 ### Environment & Tooling
 - Node.js >=22.13 (enforced in `package.json` engines)

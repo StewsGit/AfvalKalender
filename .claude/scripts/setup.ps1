@@ -14,8 +14,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
-  retries: process.env.CI ? 2 : 0,
+  // One worker on purpose. A cold Vite dev server drops requests when several
+  // workers hit it at once, which shows up as timeouts rather than real
+  // failures. Raise this only after proving the server handles the load.
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:5173',
@@ -26,7 +29,8 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI
+    reuseExistingServer: true,
+    timeout: 180_000
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 });
