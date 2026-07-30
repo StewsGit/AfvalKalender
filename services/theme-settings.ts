@@ -1,28 +1,59 @@
-import { Theme } from "../lib/types";
+import { AccentId, ThemeMode } from "../lib/types";
+import { ACCENT_KEY, THEME_MODE_KEY, isAccentId, isThemeMode } from "../lib/theme";
 
 export interface ThemeSettingsService {
-  getTheme(): Theme | null;
-  saveTheme(theme: Theme): void;
-  clearTheme(): void;
+  getMode(): ThemeMode | null;
+  saveMode(mode: ThemeMode): void;
+  getAccent(): AccentId | null;
+  saveAccent(accent: AccentId): void;
+  clear(): void;
+  /** Notifies on our own writes and on writes made by another tab. */
+  subscribe(listener: () => void): () => void;
 }
 
-const THEME_KEY = "afvalmorgen.theme.v1";
+function read(key: string): unknown {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(localStorage.getItem(key) || "null");
+  } catch {
+    // Invalid storage is treated as empty.
+    return null;
+  }
+}
+
+const listeners = new Set<() => void>();
+
+function write(key: string, value: string) {
+  localStorage.setItem(key, JSON.stringify(value));
+  for (const listener of listeners) listener();
+}
 
 export const themeSettingsService: ThemeSettingsService = {
-  getTheme() {
-    if (typeof window === "undefined") return null;
-    try {
-      const value = localStorage.getItem(THEME_KEY);
-      return value ? (JSON.parse(value) as Theme) : null;
-    } catch {
-      // Invalid storage is treated as empty
-      return null;
-    }
+  getMode() {
+    const value = read(THEME_MODE_KEY);
+    return isThemeMode(value) ? value : null;
   },
-  saveTheme(theme) {
-    localStorage.setItem(THEME_KEY, JSON.stringify(theme));
+  saveMode(mode) {
+    write(THEME_MODE_KEY, mode);
   },
-  clearTheme() {
-    localStorage.removeItem(THEME_KEY);
+  getAccent() {
+    const value = read(ACCENT_KEY);
+    return isAccentId(value) ? value : null;
+  },
+  saveAccent(accent) {
+    write(ACCENT_KEY, accent);
+  },
+  clear() {
+    localStorage.removeItem(THEME_MODE_KEY);
+    localStorage.removeItem(ACCENT_KEY);
+    for (const listener of listeners) listener();
+  },
+  subscribe(listener) {
+    listeners.add(listener);
+    window.addEventListener("storage", listener);
+    return () => {
+      listeners.delete(listener);
+      window.removeEventListener("storage", listener);
+    };
   },
 };

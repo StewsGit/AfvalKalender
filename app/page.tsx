@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Address, CollectionDay, CollectionResponse, WasteType, Theme } from "../lib/types";
+import { Fragment, FormEvent, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AccentId, Address, CollectionDay, CollectionResponse, ThemeMode, WasteType } from "../lib/types";
 import { addressSettingsService } from "../services/address-settings";
 import { themeSettingsService } from "../services/theme-settings";
+import { ACCENTS, DEFAULT_ACCENT, DEFAULT_MODE, THEME_MODE_LABELS, resolveTheme } from "../lib/theme";
 import { cacheService } from "../services/collection-cache";
 import { getBrusselsDateKey, getNextDateKeys, longDutchDate } from "../lib/dates";
 import { getWastePresentation } from "../lib/waste-normalization";
@@ -118,6 +119,96 @@ function AddressForm({ initial, onSuccess, onCancel }: {
   );
 }
 
+const MODE_ORDER: ThemeMode[] = ["light", "dark", "system"];
+const DARK_QUERY = "(prefers-color-scheme: dark)";
+
+function subscribeToColorScheme(onChange: () => void) {
+  const query = window.matchMedia(DARK_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/**
+ * Reads the appearance preferences straight from their stores, so a second tab
+ * or a change to the OS setting is picked up without extra wiring. The stored
+ * mode and accent are also what the layout's bootstrap script applies before
+ * first paint; this hook keeps <html> in sync from then on.
+ */
+function useAppearance() {
+  const mode = useSyncExternalStore(
+    themeSettingsService.subscribe,
+    () => themeSettingsService.getMode() ?? DEFAULT_MODE,
+    () => DEFAULT_MODE,
+  );
+  const accent = useSyncExternalStore(
+    themeSettingsService.subscribe,
+    () => themeSettingsService.getAccent() ?? DEFAULT_ACCENT,
+    () => DEFAULT_ACCENT,
+  );
+  const prefersDark = useSyncExternalStore(subscribeToColorScheme, () => window.matchMedia(DARK_QUERY).matches, () => false);
+
+  const theme = resolveTheme(mode, prefersDark);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-accent", accent);
+  }, [theme, accent]);
+
+  return {
+    mode,
+    accent,
+    changeMode: themeSettingsService.saveMode,
+    changeAccent: themeSettingsService.saveAccent,
+  };
+}
+
+function AppearanceSettings({ mode, accent, onModeChange, onAccentChange }: {
+  mode: ThemeMode;
+  accent: AccentId;
+  onModeChange: (mode: ThemeMode) => void;
+  onAccentChange: (accent: AccentId) => void;
+}) {
+  return (
+    <section className="settings-card" aria-labelledby="appearance-title">
+      <div className="eyebrow">Uiterlijk</div>
+      <h2 id="appearance-title">Kies je thema en kleur</h2>
+      <p className="appearance-hint">Je keuze blijft alleen in deze browser bewaard.</p>
+
+      <fieldset className="appearance-group">
+        <legend>Modus</legend>
+        <div className="mode-options">
+          {MODE_ORDER.map((option) => (
+            <Fragment key={option}>
+              <input type="radio" id={`theme-mode-${option}`} name="theme-mode" value={option}
+                checked={mode === option} onChange={() => onModeChange(option)} />
+              <label className="mode-option" htmlFor={`theme-mode-${option}`}>
+                <span className="material-symbols-outlined" aria-hidden="true">{THEME_MODE_LABELS[option].icon}</span>
+                {THEME_MODE_LABELS[option].label}
+              </label>
+            </Fragment>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="appearance-group">
+        <legend>Accentkleur</legend>
+        <div className="accent-grid">
+          {ACCENTS.map((option) => (
+            <Fragment key={option.id}>
+              <input type="radio" id={`accent-${option.id}`} name="accent" value={option.id}
+                checked={accent === option.id} onChange={() => onAccentChange(option.id)} />
+              <label className="accent-swatch" data-accent={option.id} htmlFor={`accent-${option.id}`} title={option.label}>
+                <span className="material-symbols-outlined" aria-hidden="true">check</span>
+                <span className="visually-hidden">{option.label}</span>
+              </label>
+            </Fragment>
+          ))}
+        </div>
+      </fieldset>
+    </section>
+  );
+}
+
 export default function Home() {
   const [state, setState] = useState<ViewState>("loading");
   const [address, setAddress] = useState<Address | null>(null);
@@ -125,7 +216,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light'); // initial value, will be set in effect
+  const appearance = useAppearance();
 
   const load = useCallback(async (savedAddress: Address, force = false) => {
     const cached = cacheService.get(savedAddress);
@@ -158,28 +249,14 @@ export default function Home() {
   useEffect(() => {
     void Promise.resolve().then(() => {
       const savedAddress = addressSettingsService.getAddress();
-      const savedTheme = themeSettingsService.getTheme();
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = savedTheme ?? (systemPrefersDark ? 'dark' : 'light');
-
       if (!savedAddress) {
         setState("settings");
         return;
       }
-
       setAddress(savedAddress);
-      setTheme(initialTheme);
       void load(savedAddress);
     });
   }, [load]);
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add('dark-theme');
-    } else {
-      document.documentElement.classList.remove('dark-theme');
-    }
-  }, [theme]);
 
   const days = useMemo(() => {
     const keys = getNextDateKeys(7);
@@ -198,11 +275,6 @@ export default function Home() {
     setAddress(newAddress); setData(response); setError(""); setSettingsOpen(false); setState("ready");
   }
 
-  function handleThemeChange(newTheme: Theme) {
-    setTheme(newTheme);
-    themeSettingsService.saveTheme(newTheme);
-  }
-
   function forgetAddress() {
     addressSettingsService.clearAddress(); cacheService.clear();
     setAddress(null); setData(null); setSettingsOpen(false); setState("settings");
@@ -215,33 +287,8 @@ export default function Home() {
         <AddressForm initial={address} onSuccess={acceptAddress}
           onCancel={settingsOpen ? () => setSettingsOpen(false) : undefined} />
 
-        {/* Theme settings */}
-        <div className="settings-card">
-          <div className="eyebrow">Uiterlijk</div>
-          <h2>Kies een thema</h2>
-          <div className="field-row">
-            <label htmlFor="theme-toggle" className="toggle-label">
-              <span className="theme-icon">
-                {theme === 'dark' ? <span className="material-symbols-outlined">dark_mode</span> : <span className="material-symbols-outlined">light_mode</span>}
-              </span>
-              Donkere modus
-              <input
-                id="theme-toggle"
-                type="checkbox"
-                checked={theme === 'dark'}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    handleThemeChange('dark');
-                  } else {
-                    handleThemeChange('light');
-                  }
-                }}
-              />
-              <span className="slider" aria-label="Donkere modus schakelaar"></span>
-            </label>
-          </div>
-        </div>
-
+        <AppearanceSettings mode={appearance.mode} accent={appearance.accent}
+          onModeChange={appearance.changeMode} onAccentChange={appearance.changeAccent} />
         {settingsOpen && <button className="danger-button" type="button" onClick={forgetAddress}>Adres vergeten</button>}
       </main>
     );
@@ -268,8 +315,8 @@ export default function Home() {
           </span>
           <span>Afval Kalender</span>
         </a>
-        <button className="settings-button" onClick={() => setSettingsOpen(true)} aria-label="Adresinstellingen openen">
-          <span className="material-symbols-outlined" aria-hidden="true">settings</span> Adres wijzigen
+        <button className="settings-button" onClick={() => setSettingsOpen(true)} aria-label="Instellingen openen">
+          <span className="material-symbols-outlined" aria-hidden="true">settings</span> Instellingen
         </button>
       </header>
       <div id="main-content">
