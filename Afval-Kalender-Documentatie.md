@@ -650,23 +650,54 @@ Onbekende categorieën blijven zichtbaar met:
 ## 13. Styling en responsive ontwerp
 
 De algemene kleuren staan als CSS-variabelen bovenaan in
-`app/globals.css`:
+`app/globals.css`. Er zijn twee lagen: neutrale tokens die per thema wisselen,
+en een accentkleur die de gebruiker zelf kiest.
 
 ```css
 :root {
   --ink: #17352e;
   --muted: #61746f;
-  --green: #176b52;
-  --green-dark: #0d4e3b;
-  --cream: #f5f7f2;
-  --white: #ffffff;
+  --bg: #f5f7f2;
+  --surface: #fff;
   --line: #dfe7e2;
   --danger: #a53b35;
+  --on-accent: #fff;
+}
+
+:root[data-theme="dark"] {
+  --ink: #e7ecee;
+  --bg: #14181a;
+  --surface: #1d2225;
+  --on-accent: #0e1614;
 }
 ```
 
+De accentkleur volgt uit `data-accent` op `<html>`; per accent bestaat er een
+lichte en een donkere variant, zodat de kleur in beide thema's leesbaar blijft:
+
+```css
+:root[data-accent="blue"] { --accent: var(--c-blue); --accent-strong: var(--c-blue-2); }
+:root[data-theme="dark"][data-accent="blue"] { --accent: var(--c-blue-d); --accent-strong: var(--c-blue-d2); }
+```
+
 Door CSS-variabelen te gebruiken, kan het algemene kleurthema op één plaats
-worden aangepast.
+worden aangepast. Zie hoofdstuk 13a voor de thema-instellingen zelf.
+
+### 13a. Thema en accentkleur
+
+- `lib/theme.ts` bevat de lijst met accenten, de opslagsleutels en het
+  `themeBootstrapScript`.
+- `services/theme-settings.ts` leest en schrijft de voorkeuren in
+  `localStorage` (`afvalmorgen.theme.v1` en `afvalmorgen.accent.v1`) en waarschuwt
+  abonnees, ook bij een wijziging in een ander tabblad.
+- `app/layout.tsx` voert het bootstrap-script uit in `<head>`, zodat `data-theme`
+  en `data-accent` al vóór de eerste weergave juist staan en de pagina niet
+  kortstondig in het verkeerde thema flitst.
+- `useAppearance` in `app/page.tsx` houdt `<html>` daarna in sync en volgt de
+  systeemvoorkeur wanneer de modus op `system` staat.
+
+Ongeldige of onbekende opgeslagen waarden worden genegeerd; dan gelden de
+standaarden (`system` en het groene accent).
 
 Het weekoverzicht gebruikt CSS Grid:
 
@@ -834,15 +865,24 @@ hostingsjabloon. De huidige Afval Kalender gebruikt geen database.
 
 ### 18.1 Algemene kleuren veranderen
 
-Pas de variabelen in `app/globals.css` aan:
+Pas de neutrale tokens in `app/globals.css` aan, voor elk thema apart:
 
 ```css
-:root {
-  --green: #2563eb;
-  --green-dark: #1e3a8a;
-  --cream: #f4f7fb;
-}
+:root { --bg: #f4f7fb; --surface: #fff; }
+:root[data-theme="dark"] { --bg: #14181a; --surface: #1d2225; }
 ```
+
+### 18.1a Een accentkleur toevoegen
+
+1. Voeg in `app/globals.css` de bronwaarden toe (licht, donker en het diepe
+   paar voor de hero-kaart), bijvoorbeeld `--c-brick*`.
+2. Voeg de vier regels toe die `--accent`, `--accent-strong`, `--hero-*` en
+   `.accent-swatch[data-accent="brick"]` invullen.
+3. Voeg het id toe aan `AccentId` in `lib/types.ts` en aan `ACCENTS` in
+   `lib/theme.ts`, met een Nederlands label.
+
+De keuzelijst in de instellingen en het bootstrap-script volgen automatisch.
+`tests/unit/theme.test.ts` bewaakt dat beide lijsten gelijk blijven.
 
 ### 18.2 Teksten veranderen
 
@@ -851,7 +891,7 @@ Zoek de zichtbare tekst in `app/page.tsx`, bijvoorbeeld:
 - `Morgen`;
 - `Geen afvalophaling morgen`;
 - `Zet dit afval vanavond buiten`;
-- `Adres wijzigen`;
+- `Instellingen`;
 - `Vernieuwen`.
 
 ### 18.3 Applicatienaam en metadata veranderen

@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Install dependencies**: `npm ci`
 - **Start development server**: `npm run dev` (opens local Vite URL)
 - **Run unit tests**: `npm test` (runs Node.js test runner on `tests/unit/*.test.ts`)
+- **Run E2E tests**: `npx playwright test` (specs in `tests/e2e/`; starts the dev server automatically)
 - **Run linting**: `npm run lint` (uses eslint with Next.js config)
 - **Build for production**: `npm run build` (bundles via Vinext/Vite into Cloudflare Worker format)
 - **Validate build artifacts**: `npm run validate:artifact` (runs validation script)
@@ -52,7 +53,8 @@ User → React Interface → Internal API Route → IVAREM Provider → IVAREM
 ### Important Files
 - `app/page.tsx` – Main UI component with state (`address`, `data`, `error`, `viewState`)
 - `app/layout.tsx` – Root layout, metadata, globals.css, Material Symbols
-- `app/globals.css` – CSS variables (`--ink`, `--muted`, `--green`, etc.) and responsive grid
+- `app/globals.css` – CSS variables (`--ink`, `--muted`, `--accent`, etc.), theme/accent tokens, and responsive grid
+- `lib/theme.ts` – Accent palette, theme-mode resolution, and the pre-paint bootstrap script
 - `services/ivarem-provider.ts` – Core IVAREM integration (override for other data sources)
 - `services/collection-cache.ts` – Cache logic (adjust `CACHE_DURATION_MS` for testing)
 - `lib/waste-normalization.ts` – Mapping rules for waste types, icons, colors
@@ -67,10 +69,12 @@ User → React Interface → Internal API Route → IVAREM Provider → IVAREM
   - Mobile: 1 column (`@media (max-width: 640px)`)
 - Icons: Google Material Symbols (e.g., `recycling` for PMD, `compost` for GFT)
 - Colors: Prefer IVAREM-provided `sourceColor`; fallback to category color; finally neutral `#6c7480`
+- Theming: `data-theme` (`light`/`dark`) and `data-accent` on `<html>` drive all colour tokens; set pre-paint by the bootstrap script in `app/layout.tsx`
 
 ### Testing
 - Unit tests in `tests/unit/` using Node.js test runner (`node --import tsx --test`)
-- Focus on pure functions: date logic (`dates.ts`) and waste normalization (`waste-normalization.ts`)
+- Focus on pure functions: date logic (`dates.ts`), waste normalization (`waste-normalization.ts`), theme resolution (`theme.ts`)
+- E2E tests in `tests/e2e/` using Playwright (`npx playwright test`); dev server starts automatically
 - Run with `npm test`; includes linting (`npm run lint`) and build validation in CI
 
 ### Environment & Tooling

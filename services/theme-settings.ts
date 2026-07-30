@@ -6,25 +6,33 @@ export interface ThemeSettingsService {
   saveMode(mode: ThemeMode): void;
   getAccent(): AccentId | null;
   saveAccent(accent: AccentId): void;
-  clear(): void;
   /** Notifies on our own writes and on writes made by another tab. */
   subscribe(listener: () => void): () => void;
 }
 
+const listeners = new Set<() => void>();
+/** Holds the choice when localStorage refuses the write (full, or private mode). */
+const fallback = new Map<string, unknown>();
+
 function read(key: string): unknown {
   if (typeof window === "undefined") return null;
   try {
-    return JSON.parse(localStorage.getItem(key) || "null");
+    const stored = localStorage.getItem(key);
+    if (stored !== null) return JSON.parse(stored);
   } catch {
-    // Invalid storage is treated as empty.
-    return null;
+    // Unreadable storage is treated as empty.
   }
+  return fallback.has(key) ? fallback.get(key) : null;
 }
 
-const listeners = new Set<() => void>();
-
 function write(key: string, value: string) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    fallback.delete(key);
+  } catch {
+    // The choice still applies to this session, it just will not be remembered.
+    fallback.set(key, value);
+  }
   for (const listener of listeners) listener();
 }
 
@@ -42,11 +50,6 @@ export const themeSettingsService: ThemeSettingsService = {
   },
   saveAccent(accent) {
     write(ACCENT_KEY, accent);
-  },
-  clear() {
-    localStorage.removeItem(THEME_MODE_KEY);
-    localStorage.removeItem(ACCENT_KEY);
-    for (const listener of listeners) listener();
   },
   subscribe(listener) {
     listeners.add(listener);

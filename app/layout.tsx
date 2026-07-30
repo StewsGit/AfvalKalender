@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { themeBootstrapScript } from "../lib/theme";
+import { DEFAULT_ACCENT, DEFAULT_MODE, resolveTheme, themeBootstrapScript } from "../lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl" data-theme="light" data-accent="green" suppressHydrationWarning>
+    // These defaults are replaced by the bootstrap script below before anything
+    // is painted, so a returning visitor never sees them.
+    <html lang="nl" data-theme={resolveTheme(DEFAULT_MODE, false)} data-accent={DEFAULT_ACCENT} suppressHydrationWarning>
       <head>
         {/* Applies the stored theme and accent before first paint, so the page
             never flashes the wrong colours while React hydrates. */}

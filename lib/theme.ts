@@ -7,7 +7,8 @@ export const ACCENT_KEY = "afvalmorgen.accent.v1";
 export const DEFAULT_MODE: ThemeMode = "system";
 export const DEFAULT_ACCENT: AccentId = "green";
 
-const THEME_MODES: ThemeMode[] = ["light", "dark", "system"];
+/** Also the order the modes are offered in. */
+export const THEME_MODES: ThemeMode[] = ["light", "dark", "system"];
 
 /**
  * Accent identities. The colour values themselves live in globals.css as

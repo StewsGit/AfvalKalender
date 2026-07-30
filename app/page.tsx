@@ -4,7 +4,7 @@ import { Fragment, FormEvent, useCallback, useEffect, useMemo, useState, useSync
 import { AccentId, Address, CollectionDay, CollectionResponse, ThemeMode, WasteType } from "../lib/types";
 import { addressSettingsService } from "../services/address-settings";
 import { themeSettingsService } from "../services/theme-settings";
-import { ACCENTS, DEFAULT_ACCENT, DEFAULT_MODE, THEME_MODE_LABELS, resolveTheme } from "../lib/theme";
+import { ACCENTS, DEFAULT_ACCENT, DEFAULT_MODE, THEME_MODES, THEME_MODE_LABELS, resolveTheme } from "../lib/theme";
 import { cacheService } from "../services/collection-cache";
 import { getBrusselsDateKey, getNextDateKeys, longDutchDate } from "../lib/dates";
 import { getWastePresentation } from "../lib/waste-normalization";
@@ -119,7 +119,6 @@ function AddressForm({ initial, onSuccess, onCancel }: {
   );
 }
 
-const MODE_ORDER: ThemeMode[] = ["light", "dark", "system"];
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
 function subscribeToColorScheme(onChange: () => void) {
@@ -177,7 +176,7 @@ function AppearanceSettings({ mode, accent, onModeChange, onAccentChange }: {
       <fieldset className="appearance-group">
         <legend>Modus</legend>
         <div className="mode-options">
-          {MODE_ORDER.map((option) => (
+          {THEME_MODES.map((option) => (
             <Fragment key={option}>
               <input type="radio" id={`theme-mode-${option}`} name="theme-mode" value={option}
                 checked={mode === option} onChange={() => onModeChange(option)} />

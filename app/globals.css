@@ -1,20 +1,26 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Accent palette. Each accent has a light pair, a dark pair (lighter, so it
-   stays readable on dark surfaces) and a deep pair for the hero card, which
-   keeps light text in both themes. These are the only literal accent colours;
-   everything below refers to them.
+   Accent palette. Per accent:
+     --c-x      / --c-x-2    light theme accent   (text on it: --on-accent, white)
+     --c-x-d    / --c-x-d2   dark theme accent    (text on it: --on-accent, near-black)
+     --c-x-h    / --c-x-h2   hero card, no collection
+     --c-x-ho   / --c-x-ho2  hero card, collection
+   The two hero pairs stay deep in both themes because the hero always carries
+   light text (--hero-ink). They are separate from the accent pair: orange and
+   pink are light enough that reusing the accent pair would drop the hero text
+   below 4.5:1. tests/unit/theme-contrast.test.ts enforces that.
+   These are the only literal accent colours; everything below refers to them.
 --------------------------------------------------------------------------- */
 :root {
-  --c-green: #176b52; --c-green-2: #0d4e3b; --c-green-d: #54c39c; --c-green-d2: #7ad3b3; --c-green-h: #214940; --c-green-h2: #183d35;
-  --c-teal: #0f6b73; --c-teal-2: #084d53; --c-teal-d: #4cc7d1; --c-teal-d2: #77d8e0; --c-teal-h: #1b464a; --c-teal-h2: #133639;
-  --c-blue: #1a5fb4; --c-blue-2: #12447f; --c-blue-d: #6aa9f0; --c-blue-d2: #93c1f6; --c-blue-h: #1e3f66; --c-blue-h2: #16304e;
-  --c-indigo: #4b3fa8; --c-indigo-2: #362d7c; --c-indigo-d: #9b90f0; --c-indigo-d2: #b6adf5; --c-indigo-h: #322c5c; --c-indigo-h2: #241f45;
-  --c-purple: #7a3596; --c-purple-2: #5a256f; --c-purple-d: #c47ee0; --c-purple-d2: #d5a3ec; --c-purple-h: #45274f; --c-purple-h2: #331d3b;
-  --c-pink: #b52c63; --c-pink-2: #8a1f4a; --c-pink-d: #f07aa6; --c-pink-d2: #f5a2c0; --c-pink-h: #55253a; --c-pink-h2: #401b2b;
-  --c-orange: #a75c12; --c-orange-2: #7d430b; --c-orange-d: #eda254; --c-orange-d2: #f3bd85; --c-orange-h: #4f3417; --c-orange-h2: #3b2711;
-  --c-slate: #47555f; --c-slate-2: #333e46; --c-slate-d: #a3b4c0; --c-slate-d2: #c0ccd6; --c-slate-h: #3a444c; --c-slate-h2: #2b3339;
+  --c-green: #176b52; --c-green-2: #0d4e3b; --c-green-d: #54c39c; --c-green-d2: #7ad3b3; --c-green-h: #214940; --c-green-h2: #183d35; --c-green-ho: #176b52; --c-green-ho2: #0d4e3b;
+  --c-teal: #0f6b73; --c-teal-2: #084d53; --c-teal-d: #4cc7d1; --c-teal-d2: #77d8e0; --c-teal-h: #1b464a; --c-teal-h2: #133639; --c-teal-ho: #0f6b73; --c-teal-ho2: #084d53;
+  --c-blue: #1a5fb4; --c-blue-2: #12447f; --c-blue-d: #6aa9f0; --c-blue-d2: #93c1f6; --c-blue-h: #1e3f66; --c-blue-h2: #16304e; --c-blue-ho: #1a5fb4; --c-blue-ho2: #12447f;
+  --c-indigo: #4b3fa8; --c-indigo-2: #362d7c; --c-indigo-d: #9b90f0; --c-indigo-d2: #b6adf5; --c-indigo-h: #322c5c; --c-indigo-h2: #241f45; --c-indigo-ho: #4b3fa8; --c-indigo-ho2: #362d7c;
+  --c-purple: #7a3596; --c-purple-2: #5a256f; --c-purple-d: #c47ee0; --c-purple-d2: #d5a3ec; --c-purple-h: #45274f; --c-purple-h2: #331d3b; --c-purple-ho: #7a3596; --c-purple-ho2: #5a256f;
+  --c-pink: #b52c63; --c-pink-2: #8a1f4a; --c-pink-d: #f07aa6; --c-pink-d2: #f5a2c0; --c-pink-h: #55253a; --c-pink-h2: #401b2b; --c-pink-ho: #96214f; --c-pink-ho2: #74173c;
+  --c-orange: #a75c12; --c-orange-2: #7d430b; --c-orange-d: #eda254; --c-orange-d2: #f3bd85; --c-orange-h: #4f3417; --c-orange-h2: #3b2711; --c-orange-ho: #8a4b0e; --c-orange-ho2: #663709;
+  --c-slate: #47555f; --c-slate-2: #333e46; --c-slate-d: #a3b4c0; --c-slate-d2: #c0ccd6; --c-slate-h: #3a444c; --c-slate-h2: #2b3339; --c-slate-ho: #47555f; --c-slate-ho2: #333e46;
 }
 
 /* Accent selection (set on <html> before first paint). */
@@ -27,16 +33,16 @@
 :root[data-accent="orange"] { --accent: var(--c-orange); --accent-strong: var(--c-orange-2); --hero-from: var(--c-orange-h); --hero-to: var(--c-orange-h2); }
 :root[data-accent="slate"] { --accent: var(--c-slate); --accent-strong: var(--c-slate-2); --hero-from: var(--c-slate-h); --hero-to: var(--c-slate-h2); }
 
-/* The hero gradient for a day with a collection always uses the deep light-mode
-   pair, so white text on it stays readable in both themes. */
-:root, :root[data-accent="green"] { --hero-on-from: var(--c-green); --hero-on-to: var(--c-green-2); }
-:root[data-accent="teal"] { --hero-on-from: var(--c-teal); --hero-on-to: var(--c-teal-2); }
-:root[data-accent="blue"] { --hero-on-from: var(--c-blue); --hero-on-to: var(--c-blue-2); }
-:root[data-accent="indigo"] { --hero-on-from: var(--c-indigo); --hero-on-to: var(--c-indigo-2); }
-:root[data-accent="purple"] { --hero-on-from: var(--c-purple); --hero-on-to: var(--c-purple-2); }
-:root[data-accent="pink"] { --hero-on-from: var(--c-pink); --hero-on-to: var(--c-pink-2); }
-:root[data-accent="orange"] { --hero-on-from: var(--c-orange); --hero-on-to: var(--c-orange-2); }
-:root[data-accent="slate"] { --hero-on-from: var(--c-slate); --hero-on-to: var(--c-slate-2); }
+/* The hero gradient for a day with a collection stays deep in both themes, so
+   the light hero text on it remains readable. */
+:root, :root[data-accent="green"] { --hero-on-from: var(--c-green-ho); --hero-on-to: var(--c-green-ho2); }
+:root[data-accent="teal"] { --hero-on-from: var(--c-teal-ho); --hero-on-to: var(--c-teal-ho2); }
+:root[data-accent="blue"] { --hero-on-from: var(--c-blue-ho); --hero-on-to: var(--c-blue-ho2); }
+:root[data-accent="indigo"] { --hero-on-from: var(--c-indigo-ho); --hero-on-to: var(--c-indigo-ho2); }
+:root[data-accent="purple"] { --hero-on-from: var(--c-purple-ho); --hero-on-to: var(--c-purple-ho2); }
+:root[data-accent="pink"] { --hero-on-from: var(--c-pink-ho); --hero-on-to: var(--c-pink-ho2); }
+:root[data-accent="orange"] { --hero-on-from: var(--c-orange-ho); --hero-on-to: var(--c-orange-ho2); }
+:root[data-accent="slate"] { --hero-on-from: var(--c-slate-ho); --hero-on-to: var(--c-slate-ho2); }
 
 /* In dark mode the accent lightens so it reads against dark surfaces. */
 :root[data-theme="dark"], :root[data-theme="dark"][data-accent="green"] { --accent: var(--c-green-d); --accent-strong: var(--c-green-d2); }
