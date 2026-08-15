@@ -1,9 +1,15 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Address, CollectionDay, CollectionResponse, WasteType, Theme } from "../lib/types";
+import { Address, CollectionDay, CollectionResponse, WasteType } from "../lib/types";
 import { addressSettingsService } from "../services/address-settings";
-import { themeSettingsService } from "../services/theme-settings";
+import {
+  AppearanceSettings,
+  ColorScheme,
+  DEFAULT_APPEARANCE_SETTINGS,
+  ThemeMode,
+  appearanceSettingsService,
+} from "../services/appearance-settings";
 import { cacheService } from "../services/collection-cache";
 import { getBrusselsDateKey, getNextDateKeys, longDutchDate } from "../lib/dates";
 import { getWastePresentation } from "../lib/waste-normalization";
@@ -51,8 +57,71 @@ function WasteList({ wasteTypes, large = false }: { wasteTypes: WasteType[]; lar
   );
 }
 
-function AddressForm({ initial, onSuccess, onCancel }: {
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
+  { value: "light", label: "Licht", icon: "light_mode" },
+  { value: "dark", label: "Donker", icon: "dark_mode" },
+];
+
+const COLOR_OPTIONS: { value: ColorScheme; label: string; color: string }[] = [
+  { value: "forest", label: "Bosgroen", color: "#176b52" },
+  { value: "ocean", label: "Oceaan", color: "#176b8f" },
+  { value: "berry", label: "Bessen", color: "#8a3f74" },
+  { value: "sunset", label: "Avondrood", color: "#b85c2c" },
+];
+
+function AppearanceControls({ value, onChange }: {
+  value: AppearanceSettings;
+  onChange: (settings: AppearanceSettings) => void;
+}) {
+  return (
+    <fieldset className="appearance-settings">
+      <legend>Weergave</legend>
+      <p className="settings-help">Je keuzes worden meteen toegepast en in deze browser bewaard.</p>
+
+      <div className="appearance-group">
+        <span className="control-label">Modus</span>
+        <div className="mode-options" aria-label="Kies lichte of donkere modus">
+          {THEME_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`mode-option ${value.themeMode === option.value ? "selected" : ""}`}
+              aria-pressed={value.themeMode === option.value}
+              onClick={() => onChange({ ...value, themeMode: option.value })}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">{option.icon}</span>
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="appearance-group">
+        <span className="control-label">Kleurenschema</span>
+        <div className="color-options" aria-label="Kies een kleurenschema">
+          {COLOR_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`color-option ${value.colorScheme === option.value ? "selected" : ""}`}
+              aria-pressed={value.colorScheme === option.value}
+              onClick={() => onChange({ ...value, colorScheme: option.value })}
+            >
+              <span className="color-swatch" style={{ background: option.color }} aria-hidden="true" />
+              <span>{option.label}</span>
+              <span className="selection-check" aria-hidden="true">✓</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </fieldset>
+  );
+}
+
+function AddressForm({ initial, appearance, onAppearanceChange, onSuccess, onCancel }: {
   initial?: Address | null;
+  appearance: AppearanceSettings;
+  onAppearanceChange: (settings: AppearanceSettings) => void;
   onSuccess: (address: Address, data: CollectionResponse) => void;
   onCancel?: () => void;
 }) {
@@ -85,11 +154,21 @@ function AddressForm({ initial, onSuccess, onCancel }: {
     }
   }
 
+  const editing = Boolean(onCancel);
+
   return (
     <section className="settings-card" aria-labelledby="address-title">
-      <div className="eyebrow">Eenmalig instellen</div>
-      <h1 id="address-title">Voor welk adres wil je de ophalingen zien?</h1>
-      <p className="intro">Je adres blijft alleen in deze browser bewaard.</p>
+      <div className="eyebrow">{editing ? "Instellingen" : "Eenmalig instellen"}</div>
+      <h1 id="address-title">{editing ? "Pas je Afval Kalender aan" : "Voor welk adres wil je de ophalingen zien?"}</h1>
+      <p className="intro">Je adres en weergavevoorkeuren blijven alleen in deze browser bewaard.</p>
+
+      <AppearanceControls value={appearance} onChange={onAppearanceChange} />
+
+      <div className="settings-divider" />
+      <div className="address-heading">
+        <span className="material-symbols-outlined" aria-hidden="true">location_on</span>
+        <h2>Adres</h2>
+      </div>
       <form onSubmit={submit}>
         <div className="field-row">
           <label>Postcode
@@ -107,7 +186,7 @@ function AddressForm({ initial, onSuccess, onCancel }: {
         </label>
         {message && <div className="error-message" role="alert">{message}</div>}
         <div className="button-row">
-          <button className="primary-button" disabled={busy}>{busy ? "Adres controleren…" : "Ophaalkalender laden"}</button>
+          <button className="primary-button" disabled={busy}>{busy ? "Adres controleren…" : editing ? "Adres opslaan" : "Ophaalkalender laden"}</button>
           {onCancel && <button type="button" className="text-button" onClick={onCancel}>Annuleren</button>}
         </div>
       </form>
@@ -125,7 +204,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light'); // initial value, will be set in effect
+  const [appearance, setAppearance] = useState<AppearanceSettings>(DEFAULT_APPEARANCE_SETTINGS);
 
   const load = useCallback(async (savedAddress: Address, force = false) => {
     const cached = cacheService.get(savedAddress);
@@ -157,29 +236,16 @@ export default function Home() {
 
   useEffect(() => {
     void Promise.resolve().then(() => {
+      const savedAppearance = appearanceSettingsService.get();
+      appearanceSettingsService.apply(savedAppearance);
+      setAppearance(savedAppearance);
+
       const savedAddress = addressSettingsService.getAddress();
-      const savedTheme = themeSettingsService.getTheme();
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = savedTheme ?? (systemPrefersDark ? 'dark' : 'light');
-
-      if (!savedAddress) {
-        setState("settings");
-        return;
-      }
-
+      if (!savedAddress) { setState("settings"); return; }
       setAddress(savedAddress);
-      setTheme(initialTheme);
       void load(savedAddress);
     });
   }, [load]);
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add('dark-theme');
-    } else {
-      document.documentElement.classList.remove('dark-theme');
-    }
-  }, [theme]);
 
   const days = useMemo(() => {
     const keys = getNextDateKeys(7);
@@ -197,12 +263,11 @@ export default function Home() {
   function acceptAddress(newAddress: Address, response: CollectionResponse) {
     setAddress(newAddress); setData(response); setError(""); setSettingsOpen(false); setState("ready");
   }
-
-  function handleThemeChange(newTheme: Theme) {
-    setTheme(newTheme);
-    themeSettingsService.saveTheme(newTheme);
+  function updateAppearance(settings: AppearanceSettings) {
+    appearanceSettingsService.save(settings);
+    appearanceSettingsService.apply(settings);
+    setAppearance(settings);
   }
-
   function forgetAddress() {
     addressSettingsService.clearAddress(); cacheService.clear();
     setAddress(null); setData(null); setSettingsOpen(false); setState("settings");
@@ -212,36 +277,8 @@ export default function Home() {
   if (state === "settings" || settingsOpen) {
     return (
       <main className="app-shell narrow">
-        <AddressForm initial={address} onSuccess={acceptAddress}
+        <AddressForm initial={address} appearance={appearance} onAppearanceChange={updateAppearance} onSuccess={acceptAddress}
           onCancel={settingsOpen ? () => setSettingsOpen(false) : undefined} />
-
-        {/* Theme settings */}
-        <div className="settings-card">
-          <div className="eyebrow">Uiterlijk</div>
-          <h2>Kies een thema</h2>
-          <div className="field-row">
-            <label htmlFor="theme-toggle" className="toggle-label">
-              <span className="theme-icon">
-                {theme === 'dark' ? <span className="material-symbols-outlined">dark_mode</span> : <span className="material-symbols-outlined">light_mode</span>}
-              </span>
-              Donkere modus
-              <input
-                id="theme-toggle"
-                type="checkbox"
-                checked={theme === 'dark'}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    handleThemeChange('dark');
-                  } else {
-                    handleThemeChange('light');
-                  }
-                }}
-              />
-              <span className="slider" aria-label="Donkere modus schakelaar"></span>
-            </label>
-          </div>
-        </div>
-
         {settingsOpen && <button className="danger-button" type="button" onClick={forgetAddress}>Adres vergeten</button>}
       </main>
     );
@@ -268,8 +305,8 @@ export default function Home() {
           </span>
           <span>Afval Kalender</span>
         </a>
-        <button className="settings-button" onClick={() => setSettingsOpen(true)} aria-label="Adresinstellingen openen">
-          <span className="material-symbols-outlined" aria-hidden="true">settings</span> Adres wijzigen
+        <button className="settings-button" onClick={() => setSettingsOpen(true)} aria-label="Instellingen openen">
+          <span className="material-symbols-outlined" aria-hidden="true">settings</span> Instellingen
         </button>
       </header>
       <div id="main-content">

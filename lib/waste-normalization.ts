@@ -3,9 +3,9 @@ import { WasteType } from "./types";
 export interface WastePresentation { key: string; label: string; icon: string; color: string; }
 const categories: Array<{ matches: RegExp; value: Omit<WastePresentation, "label"> }> = [
   { matches: /\b(pmd|pmc|pmk)\b/i, value: { key: "pmd", icon: "recycling", color: "#2186c4" } },
-  { matches: /\b(gft|groente|fruit|tuinafval)\b/i, value: { key: "gft", icon: "eco", color: "#178c06" } },
+  { matches: /\b(gft|groente|fruit|tuinafval)\b/i, value: { key: "gft", icon: "compost", color: "#16806a" } },
   { matches: /\b(papier|karton|pk)\b/i, value: { key: "paper", icon: "newspaper", color: "#b98700" } },
-  { matches: /\b(huisvuil|restafval|hv)\b/i, value: { key: "residual", icon: "delete", color: "#383f3d" } },
+  { matches: /\b(huisvuil|restafval|hv)\b/i, value: { key: "residual", icon: "delete", color: "#626e6b" } },
   { matches: /\b(grof|grofvuil)\b/i, value: { key: "bulky", icon: "inventory_2", color: "#394a46" } },
   { matches: /\b(metaal)\b/i, value: { key: "metal", icon: "construction", color: "#607d8b" } },
   { matches: /\b(snoei|takken|hout)\b/i, value: { key: "garden", icon: "forest", color: "#4f7d38" } },
@@ -15,7 +15,7 @@ export function getWastePresentation(waste: WasteType): WastePresentation {
   const category = categories.find((item) => item.matches.test(`${waste.code} ${waste.name}`));
   return {
     key: category?.value.key ?? "other", label: waste.name, icon: category?.value.icon ?? "category",
-    color: category?.value.color || waste.sourceColor || "#6c7480",
+    color: waste.sourceColor || category?.value.color || "#6c7480",
   };
 }
 export function normalizeWasteType(source: { fractieCode?: unknown; fractie?: unknown; kleurcode?: unknown }): WasteType {

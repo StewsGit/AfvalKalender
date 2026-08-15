@@ -30,10 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl">
+    <html lang="nl" suppressHydrationWarning>
       <head>
         <link
-                  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=category,compost,construction,delete,delete_forever,eco,forest,inventory_2,newspaper,recycling,refresh,settings,wine_bar&display=block"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=category,compost,construction,dark_mode,delete,delete_forever,forest,inventory_2,light_mode,location_on,newspaper,recycling,refresh,settings,wine_bar&display=block"
           rel="stylesheet"
         />
       </head>
